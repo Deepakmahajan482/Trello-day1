@@ -12,19 +12,15 @@ const {authMiddleware}=require('./middleware')
 const SECRET_KEY="deepak1234"
 const app=express();
 app.use(express.json())
-let USERS_ID=1;
-let ORGANIZATION_ID=1;
-let  BOARD_ID=1;
-let ISSUE_ID=1;
+
+let USERS_ID=2;
+let ORGANIZATION_ID=2;
+let  BOARD_ID=2;
+let ISSUE_ID=2;
 
 const USERS=[{
   id:1,
   username:"Deepak",
-  password:"1234"
-},
-{
-  id:2,
-  username:"Rahul",
   password:"1234"
 }
 ];
@@ -37,13 +33,6 @@ const ORGANIZATION=[
     description:"Learning coding platform",
     admin:1,
     members:[2]
-  },
-  {
-    id:1,
-    title:"raman org",
-    description:"Experimenting",
-    admin:1,
-    members:[]
   }
 ];
 
@@ -53,8 +42,7 @@ const BOARDS=[
     id:1,
     title:"100xschool website (Frontend)",
     organizationId:1
-  },
-
+  }
 ];
 
 
@@ -63,12 +51,6 @@ const ISSUES=[{
   title:"Add dark mode",
   boardId:1,
   state:"IN_PROGRESS"
-},
-{
-  id:2,
-  title:"Allow admin to create more courses",
-  boardId:1,
-  state:"DONE"
 }
 ];
 
@@ -78,9 +60,9 @@ app.post("/signup",(req,res)=>{
   const password=req.body.password;
   const userExists=USERS.find(user=>user.username===username);
   if(userExists){
-   return res.status(403).json({
-      message:"the user is already exists"
-    })
+   return res.json({
+    message:false
+   })
   }
 
   USERS.push({
@@ -95,15 +77,21 @@ app.post("/signup",(req,res)=>{
 
 })
 
+app.get("/signup",(req,res)=>{
+   res.sendFile("D:/mern/caseStudies/express/Trello/frontend/signup.html")
+})
+
 app.post("/signin",(req,res)=>{
   const username=req.body.username;
   const password=req.body.password;
   const userExists=USERS.find(user=>user.username===username && user.password===password);
   if(!userExists){
-    res.status(403).json({
-      message:"user is not created please created first"
-    })
+    res.json({token:false})
+    return
   }
+
+
+
   // create a jwt for the user
   const token=jwt.sign({userId:userExists.id},SECRET_KEY);
  res.json({
@@ -112,6 +100,13 @@ app.post("/signin",(req,res)=>{
 })
 
 
+  app.get("/signin",(req,res)=>{
+    res.sendFile("D:/mern/caseStudies/express/Trello/frontend/signin.html")
+  })
+
+app.get("/onboarding",(req,res)=>{
+  res.sendFile("D:/mern/caseStudies/express/Trello/frontend/onboarding.html")
+})
 // Authenticated route - middleware
 app.post("/organization",authMiddleware,(req,res)=>{
   const userId=req.userId;
@@ -122,22 +117,70 @@ app.post("/organization",authMiddleware,(req,res)=>{
     admin:userId,
     members:[]
   })
+  res.json({
+    message:"ORG created",
+    id:ORGANIZATION_ID 
+  })
 })
+
+
 
 app.post("/add-member-to-organization",authMiddleware,(req,res)=>{
   const userId=req.userId
   const organizationId=req.body.organizationId
-  const memberUserEmail=req.body.organizationId
+  const memerUsername=req.body.memberUserUsername
+
   const organization =ORGANIZATION.find(org=>org.id===organizationId)
   if(!organization || organization.admin!=userId){
-    return res.status(403).json({
+     res.status(411).json({
       message:"either member not exist or you are not the admin"
     })
-    
+    return  
+  }
+  const memberUser=USERS.find(u=>u.username===memerUsername);
+  if(!memerUsername){
+    res.status(411).json({
+      message:"No user with this username exists in our db"
+    })
   }
 
+  organization.members.push(memberUser.id);
+  res.json({
+    message:"user added to organization"
+  })
 })
 
+app.get("/org",(req,res)=>{
+res.sendFile("D:/mern/caseStudies/express/Trello/frontend/organization.html")
+})
+app.get("/organization",authMiddleware,(req,res)=>{
+  const userId=req.userId;
+  const organizationId=req.query.organizationId;
+
+
+  const organization=ORGANIZATION.find(org=>org.id==organizationId);
+  if(!organization || organization.admin!=userId){
+    res.status(411).json({
+      message:"you are not the authorized admin or member"
+    })
+    return 
+  }
+
+  res.json({
+    organization:{
+      ...organization,
+      members:organization.members.map(memberId=>{
+        const user= USERS.find(user=>user.id===memberId);
+        return{
+          id:user.id,
+          username:user.username
+        }
+      }
+  )}
+  })
+
+
+})
 app.post("/board",(req,res)=>{
 
 })
@@ -167,8 +210,29 @@ app.put("/issues",(req,res)=>{
 })
 
 // delete
-app.delete("/members",(req,res)=>{
+app.delete("/members",authMiddleware,(req,res)=>{
+  const userId=req.userId
+  const organizationId=req.body.organizationId
+  const memerUsername=req.body.memberUserUsername
 
+  const organization =ORGANIZATION.find(org=>org.id==organizationId)
+  if(!organization || organization.admin!=userId){
+     res.status(411).json({
+      message:"either member not exist or you are not the admin"
+    })
+    return  
+  }
+  const memberUser=USERS.find(u=>u.username===memerUsername);
+  if(!memerUsername){
+    res.status(411).json({
+      message:"No user with this username exists in our db"
+    })
+  }
+
+  organization.members=organization.members.filter(user=>user.id!==memberUser.id);
+  res.json({
+    message:"user added to organization"
+  })
 })
 app.listen(3000,()=>{
   console.log("the server is running on http://localhost:3000/");
