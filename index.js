@@ -125,20 +125,20 @@ app.post("/organization",authMiddleware,(req,res)=>{
 
 
 
-app.post("/add-member-to-organization",authMiddleware,(req,res)=>{
+app.post("/addmembertoorganization",authMiddleware,(req,res)=>{
   const userId=req.userId
+  console.log(userId,"userId");
   const organizationId=req.body.organizationId
   const memerUsername=req.body.memberUserUsername
-
-  const organization =ORGANIZATION.find(org=>org.id===organizationId)
+  const organization =ORGANIZATION.find(organization=>organization.id==organizationId)
   if(!organization || organization.admin!=userId){
      res.status(411).json({
       message:"either member not exist or you are not the admin"
     })
     return  
   }
-  const memberUser=USERS.find(u=>u.username===memerUsername);
-  if(!memerUsername){
+  const memberUser=USERS.find(u=>u.username==memerUsername);
+  if(!memberUser){
     res.status(411).json({
       message:"No user with this username exists in our db"
     })
@@ -153,10 +153,11 @@ app.post("/add-member-to-organization",authMiddleware,(req,res)=>{
 app.get("/org",(req,res)=>{
 res.sendFile("D:/mern/caseStudies/express/Trello/frontend/organization.html")
 })
+
+
 app.get("/organization",authMiddleware,(req,res)=>{
   const userId=req.userId;
   const organizationId=req.query.organizationId;
-
 
   const organization=ORGANIZATION.find(org=>org.id==organizationId);
   if(!organization || organization.admin!=userId){

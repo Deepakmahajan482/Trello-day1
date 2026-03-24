@@ -90,8 +90,11 @@
       headers:{
         token:localStorage.getItem('token')
       }
-    });
-    window.location="/organization"
+    }
+  );
+  localStorage.setItem('organizationId',response.data.id)
+  console.log(response.data.id);
+    window.location="/org"
     }
   </script>
 </body>

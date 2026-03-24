@@ -3,18 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <title>Document</title>
 </head>
 <body>
     <div>
       <div>Loading</div>
       <div>
-        <input type="text" placeholder="Add member">
+        <input type="text" placeholder="Add member" id="member">
         <button onclick="invite()">Invite</button>
       </div>
       <script>
-        function invite(){
-
+        async function invite(){
+          const memberUserUsername=document.getElementById('member').value;
+          console.log(memberUserUsername)
+           const response=await axios.post("http://localhost:3000/addmembertoorganization",{
+        memberUserUsername:memberUserUsername,
+        organizationId:localStorage.getItem('organizationId')
+      },
+    {
+      headers:{
+        token:localStorage.getItem('token')
+      }
+    }
+  );
+  alert(response.data.message);
+  console.log("hello ")
         }
         function already(){
           
