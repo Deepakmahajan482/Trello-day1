@@ -119,69 +119,89 @@ app.post("/organization",authMiddleware,(req,res)=>{
   })
   res.json({
     message:"ORG created",
-    id:ORGANIZATION_ID 
+    id:ORGANIZATION_ID-1 
   })
 })
 
 
 
-app.post("/addmembertoorganization",authMiddleware,(req,res)=>{
-  const userId=req.userId
-  console.log(userId,"userId");
-  const organizationId=req.body.organizationId
-  const memerUsername=req.body.memberUserUsername
-  const organization =ORGANIZATION.find(organization=>organization.id==organizationId)
-  if(!organization || organization.admin!=userId){
-     res.status(411).json({
-      message:"either member not exist or you are not the admin"
-    })
-    return  
-  }
-  const memberUser=USERS.find(u=>u.username==memerUsername);
-  if(!memberUser){
-    res.status(411).json({
-      message:"No user with this username exists in our db"
-    })
+app.post("/addmembertoorganization", authMiddleware, (req, res) => {
+  const userId = req.userId;
+  const organizationId = req.body.organizationId;
+  const memberUsername = req.body.memberUserUsername;
+
+  const organization = ORGANIZATION.find(org => org.id == organizationId);
+  // console.log("userid",userId," organizationId",organizationId," memberusername",memberUsername," organization",organization)
+
+  if (!organization) {
+    return res.status(404).json({
+      message: "Organization not found"
+    });
   }
 
+  if (organization.admin != userId) {
+    return res.status(403).json({
+      message: "You are not the admin"
+    });
+  }
+
+  const memberUser = USERS.find(u => u.username == memberUsername);
+
+  if (!memberUser) {
+    return res.status(404).json({
+      message: "User not found"
+    });
+  }
+
+  if(!organization.members.includes(memberUser.id)){
   organization.members.push(memberUser.id);
-  res.json({
-    message:"user added to organization"
-  })
-})
+  }
 
+  res.json({
+    message: "true"
+  });
+  
+});
 app.get("/org",(req,res)=>{
 res.sendFile("D:/mern/caseStudies/express/Trello/frontend/organization.html")
 })
 
 
-app.get("/organization",authMiddleware,(req,res)=>{
-  const userId=req.userId;
-  const organizationId=req.query.organizationId;
+app.get("/organization", authMiddleware, (req, res) => {
+  const userId = req.userId;
+  const organizationId = req.query.organizationId;
 
-  const organization=ORGANIZATION.find(org=>org.id==organizationId);
-  if(!organization || organization.admin!=userId){
-    res.status(411).json({
-      message:"you are not the authorized admin or member"
-    })
-    return 
+  const organization = ORGANIZATION.find(org => org.id == organizationId);
+
+  if (!organization) {
+    return res.status(404).json({
+      message: "Organization not found"
+    });
   }
 
+  // admin ya member hi dekh sakta
+  if (organization.admin != userId && !organization.members.includes(userId)) {
+    return res.status(403).json({
+      message: "Not authorized"
+    });
+  }
+
+  const members = organization.members.map(memberId => {
+    const user = USERS.find(u => u.id == memberId);
+    return {
+      id: user.id,
+      username: user.username
+    };
+  });
+
   res.json({
-    organization:{
-      ...organization,
-      members:organization.members.map(memberId=>{
-        const user= USERS.find(user=>user.id===memberId);
-        return{
-          id:user.id,
-          username:user.username
-        }
-      }
-  )}
-  })
-
-
-})
+    organization: {
+      id: organization.id,
+      title: organization.title,
+      members: members
+    }
+  });
+});
 app.post("/board",(req,res)=>{
 
 })

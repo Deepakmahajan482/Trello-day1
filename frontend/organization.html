@@ -3,37 +3,197 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <title>Document</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <title>Organization</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body{
+      height:100vh;
+      background: linear-gradient(120deg, #4f46e5, #9333ea);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .container{
+      width:92%;
+      height:92vh;
+      background:white;
+      border-radius:15px;
+      display:flex;
+      box-shadow:0 10px 25px rgba(0,0,0,0.2);
+      overflow:hidden;
+    }
+
+    /* LEFT - MEMBERS */
+    .left{
+      width:70%;
+      background:#111827;
+      color:white;
+      padding:30px;
+      overflow-y:auto;
+    }
+
+    .left h2{
+      margin-bottom:20px;
+      border-bottom:1px solid gray;
+      padding-bottom:10px;
+    }
+
+    .member{
+      background:#1f2937;
+      padding:15px;
+      border-radius:8px;
+      margin-top:12px;
+      font-size:18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+
+    /* RIGHT - INVITE */
+    .right{
+      width:30%;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      background:#f9fafb;
+    }
+
+    .invite-box{
+      width:80%;
+    }
+
+    .invite-box h2{
+      text-align:center;
+      margin-bottom:20px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border:1px solid #ccc;
+      border-radius:6px;
+      margin-top:10px;
+      font-size:15px;
+    }
+
+    input:focus{
+      outline:none;
+      border-color:#4f46e5;
+    }
+
+    button{
+      width:100%;
+      padding:12px;
+      margin-top:20px;
+      background:#4f46e5;
+      color:white;
+      border:none;
+      border-radius:6px;
+      font-size:16px;
+      cursor:pointer;
+      transition:0.3s;
+    }
+
+    button:hover{
+      background:#4338ca;
+    }
+
+    .remove-btn{
+      background:#ef4444;
+      padding:6px 10px;
+      border:none;
+      border-radius:5px;
+      color:white;
+      cursor:pointer;
+      font-size:12px;
+    }
+
+    .remove-btn:hover{
+      background:#dc2626;
+    }
+
+  </style>
 </head>
 <body>
-    <div>
-      <div>Loading</div>
-      <div>
-        <input type="text" placeholder="Add member" id="member">
-        <button onclick="invite()">Invite</button>
-      </div>
-      <script>
-        async function invite(){
-          const memberUserUsername=document.getElementById('member').value;
-          console.log(memberUserUsername)
-           const response=await axios.post("http://localhost:3000/addmembertoorganization",{
-        memberUserUsername:memberUserUsername,
-        organizationId:localStorage.getItem('organizationId')
-      },
-    {
-      headers:{
-        token:localStorage.getItem('token')
-      }
-    }
-  );
-  alert(response.data.message);
-  console.log("hello ")
-        }
-        function already(){
-          
-        }
-      </script>
+
+<div class="container">
+  
+  <!-- Members Section -->
+  <div class="left">
+    <h2>Organization Members</h2>
+    <div id="membersList">
+      Loading...
     </div>
+  </div>
+
+  <!-- Invite Section -->
+  <div class="right">
+    <div class="invite-box">
+      <h2>Invite Member</h2>
+      <input type="text" placeholder="Enter username" id="member">
+      <button onclick="invite()">Invite</button>
+ <button onclick="nextStage()">Next</button>
+
+    </div>
+    
+  </div>
+</div>
+
+<script>
+async function invite(){
+  const memberUserUsername=document.getElementById('member').value;
+
+  const response=await axios.post("http://localhost:3000/addmembertoorganization",{
+    memberUserUsername:memberUserUsername,
+    organizationId:localStorage.getItem('organizationId')
+  },
+  {
+    headers:{
+      token:localStorage.getItem('token')
+    }
+  });
+
+  console.log(response.data.message);
+  Starting();
+}
+
+async function Starting(){
+  const org = localStorage.getItem('organizationId');
+  console.log("Org id:", org);
+
+  const response = await axios.get("http://localhost:3000/organization",{
+    params:{ organizationId: org },
+    headers:{ token: localStorage.getItem('token') }
+  });
+
+  const data = response.data.organization.members;
+
+  const memberList = document.getElementById('membersList');
+  memberList.innerHTML = "";
+
+  for(let i=0; i<data.length; i++){
+    const div = document.createElement('div');
+    div.className = "member";
+    div.innerHTML = `<h4>${data[i].username}</h4>`;
+    memberList.appendChild(div);
+  }
+}
+
+window.onload = Starting;
+function nextStage(){
+  window.location="/dashboard"
+}
+
+</script>
+
 </body>
 </html>
