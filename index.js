@@ -203,7 +203,23 @@ app.get("/organization", authMiddleware, (req, res) => {
   });
 });
 app.post("/board",(req,res)=>{
-
+  const organizationId=req.body.organizationId
+  const title=req.body.title
+  const organization=ORGANIZATION.find(org=>org.id==organizationId)
+  if(!organization){
+    res.status(403).json({
+      message:"organization not found"
+    })
+    return 
+  }
+  BOARDS.push({
+    id:BOARD_ID++,
+    title:title,
+    organizationId:organizationId
+  })
+  res.json({
+    message:"Done"
+  })
 })
 
 app.post("/issue",(req,res)=>{
@@ -212,8 +228,21 @@ app.post("/issue",(req,res)=>{
 
 
 // Read backend.trello.com/boards:organizationId
-app.get("/boards",(req,res)=>{
-
+app.get("/dashboard",(req,res)=>{
+  res.sendFile("D:/mern/caseStudies/express/Trello/frontend/dashboard.html")
+})
+app.get("/boards",authMiddleware,(req,res)=>{
+  const UserId=req.userId;
+  const organizationId=req.query.organizationId
+  const BoardFind=BOARDS.filter(board=>board.organizationId==organizationId)
+  if(!BoardFind){
+    res.status(403).json({
+      message:"board is not there"
+    })
+  }
+  res.json({
+    Board:BoardFind
+  })
 })
 
 app.get("/issues",(req,res)=>{
