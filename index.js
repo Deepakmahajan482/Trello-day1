@@ -13,7 +13,7 @@ const SECRET_KEY="deepak1234"
 const app=express();
 app.use(express.json())
 
-let USERS_ID=2;
+let USERS_ID=3;
 let ORGANIZATION_ID=2;
 let  BOARD_ID=2;
 let ISSUE_ID=2;
@@ -21,6 +21,10 @@ let ISSUE_ID=2;
 const USERS=[{
   id:1,
   username:"Deepak",
+  password:"1234"
+},{
+  id:2,
+  username:"Bhumi",
   password:"1234"
 }
 ];
@@ -31,6 +35,13 @@ const ORGANIZATION=[
     id:1,
     title:"100xdevs",
     description:"Learning coding platform",
+    admin:1,
+    members:[2]
+  },
+  {
+    id:2,
+    title:"mai hu doon",
+    description:"Learning things",
     admin:1,
     members:[2]
   }
@@ -139,7 +150,7 @@ app.post("/addmembertoorganization", authMiddleware, (req, res) => {
     });
   }
 
-  if (organization.admin != userId) {
+  if (organization.admin != userId ) {
     return res.status(403).json({
       message: "You are not the admin"
     });
@@ -153,10 +164,10 @@ app.post("/addmembertoorganization", authMiddleware, (req, res) => {
     });
   }
 
-  if(!organization.members.includes(memberUser.id)){
+  if(!organization.members.includes(memberUser.id) && memberUser.id!=userId){
   organization.members.push(memberUser.id);
   }
-
+  
   res.json({
     message: "true"
   });
@@ -235,7 +246,7 @@ app.get("/boards",authMiddleware,(req,res)=>{
   const UserId=req.userId;
   const organizationId=req.query.organizationId
   const BoardFind=BOARDS.filter(board=>board.organizationId==organizationId)
-  if(!BoardFind){
+  if(BoardFind.length==0){
     res.status(403).json({
       message:"board is not there"
     })
@@ -245,6 +256,20 @@ app.get("/boards",authMiddleware,(req,res)=>{
   })
 })
 
+app.get("/optionsOrg",authMiddleware,(req,res)=>{
+  const userId=req.userId
+  const organization=ORGANIZATION.filter(org=>org.admin==userId)
+  if(!organization){
+    res.status(403).json({
+      message:"not found"
+    })
+    return 
+  }
+  res.json({
+    message:"found",
+    organizationData:organization
+  })
+})
 app.get("/issues",(req,res)=>{
 
 
