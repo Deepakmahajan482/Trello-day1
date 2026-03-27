@@ -14,7 +14,7 @@ const app=express();
 app.use(express.json())
 
 let USERS_ID=3;
-let ORGANIZATION_ID=2;
+let ORGANIZATION_ID=3;
 let  BOARD_ID=2;
 let ISSUE_ID=2;
 
@@ -271,11 +271,6 @@ app.get("/optionsOrg",authMiddleware,(req,res)=>{
   })
 })
 app.get("/issues",(req,res)=>{
-
-
-})
-
-app.get("/members",(req,res)=>{
 
 })
 

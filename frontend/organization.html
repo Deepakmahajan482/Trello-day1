@@ -154,7 +154,7 @@ async function invite(){
 
   const response=await axios.post("http://localhost:3000/addmembertoorganization",{
     memberUserUsername:memberUserUsername,
-    organizationId:localStorage.getItem('organizationId')
+    organizationId:localStorage.getItem("organizationId")
   },
   {
     headers:{
@@ -167,7 +167,7 @@ async function invite(){
 }
 
 async function Starting(){
-  const org = localStorage.getItem('organizationId');
+  const org = localStorage.getItem("organizationId");
   console.log("Org id:", org);
 
   const response = await axios.get("http://localhost:3000/organization",{
