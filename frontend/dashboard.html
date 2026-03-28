@@ -164,7 +164,7 @@ async function invite(){
   },
   {
     headers:{
-      Authorization: "Bearer " + localStorage.getItem('token')
+      token: localStorage.getItem('token')
     }
   });
 
@@ -190,16 +190,13 @@ async function starting(){
     div.className = "board-card";
     div.innerHTML = `
       <h3>${data[i].title}</h3>
-      <button onclick="openBoard(${data[i].id})">Open</button>
+      
     `;
     container.appendChild(div);
   }
 }
 
-function openBoard(boardId){
-  localStorage.setItem("boardId", boardId);
-  window.location = "/issues";
-}
+
 
 starting();
 </script>

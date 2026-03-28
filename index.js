@@ -57,13 +57,7 @@ const BOARDS=[
 ];
 
 
-const ISSUES=[{
-  id:1,
-  title:"Add dark mode",
-  boardId:1,
-  state:"IN_PROGRESS"
-}
-];
+
 
 
 app.post("/signup",(req,res)=>{
@@ -233,9 +227,6 @@ app.post("/board",(req,res)=>{
   })
 })
 
-app.post("/issue",(req,res)=>{
-
-})
 
 
 // Read backend.trello.com/boards:organizationId
@@ -269,14 +260,6 @@ app.get("/optionsOrg",authMiddleware,(req,res)=>{
     message:"found",
     organizationData:organization
   })
-})
-app.get("/issues",(req,res)=>{
-
-})
-
-// update
-app.put("/issues",(req,res)=>{
-
 })
 
 // delete
