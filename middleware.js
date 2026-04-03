@@ -5,7 +5,7 @@ function authMiddleware(req,res,next){
   const userId=decode;
   if(userId){
     req.userId = decode.userId;
-    next();
+    next()
   }
   else{
     res.status(403).json({

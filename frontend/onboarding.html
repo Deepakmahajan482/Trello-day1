@@ -100,7 +100,7 @@
 
       for(let i = 0; i < data.length; i++){
         const option = document.createElement("option");
-        option.value = data[i].id;
+        option.value = data[i]._id;
         option.textContent = data[i].title;
         select.appendChild(option);
       }

@@ -8,26 +8,18 @@
 const express=require('express')
 const jwt=require('jsonwebtoken')
 const {authMiddleware}=require('./middleware')
+const {userModel,organizationModel,boardModel}=require('./models')
+
 
 const SECRET_KEY="deepak1234"
 const app=express();
 app.use(express.json())
 
-let USERS_ID=3;
+
 let ORGANIZATION_ID=3;
 let  BOARD_ID=2;
 let ISSUE_ID=2;
 
-const USERS=[{
-  id:1,
-  username:"Deepak",
-  password:"1234"
-},{
-  id:2,
-  username:"Bhumi",
-  password:"1234"
-}
-];
 
 
 const ORGANIZATION=[
@@ -60,22 +52,22 @@ const BOARDS=[
 
 
 
-app.post("/signup",(req,res)=>{
+app.post("/signup",async (req,res)=>{
   const username=req.body.username;
   const password=req.body.password;
-  const userExists=USERS.find(user=>user.username===username);
+  const userExists=await userModel.findOne({
+    username:username
+  })
   if(userExists){
    return res.json({
     message:false
    })
   }
 
-  USERS.push({
-    username,
-    password,
-    id:USERS_ID++
+ const user=await userModel.create({
+    username:username,
+    password:password
   })
-
   res.json({
     message:"user created successfully"
   })
@@ -86,19 +78,19 @@ app.get("/signup",(req,res)=>{
    res.sendFile("D:/mern/caseStudies/express/Trello/frontend/signup.html")
 })
 
-app.post("/signin",(req,res)=>{
+app.post("/signin",async (req,res)=>{
   const username=req.body.username;
   const password=req.body.password;
-  const userExists=USERS.find(user=>user.username===username && user.password===password);
+  const userExists=await userModel.findOne({
+    username:username,
+    password:password
+  })
   if(!userExists){
     res.json({token:false})
     return
   }
-
-
-
   // create a jwt for the user
-  const token=jwt.sign({userId:userExists.id},SECRET_KEY);
+  const token=jwt.sign({userId:userExists._id},SECRET_KEY);
  res.json({
     token: token
   });
@@ -113,29 +105,29 @@ app.get("/onboarding",(req,res)=>{
   res.sendFile("D:/mern/caseStudies/express/Trello/frontend/onboarding.html")
 })
 // Authenticated route - middleware
-app.post("/organization",authMiddleware,(req,res)=>{
+app.post("/organization",authMiddleware,async(req,res)=>{
+  
   const userId=req.userId;
-  ORGANIZATION.push({
-    id:ORGANIZATION_ID++,
+  const organization=await organizationModel.create({
     title:req.body.title,
     description:req.body.description,
     admin:userId,
-    members:[]
+    members:[userId]
   })
   res.json({
     message:"ORG created",
-    id:ORGANIZATION_ID-1 
+    id:organization._id
   })
 })
 
 
 
-app.post("/addmembertoorganization", authMiddleware, (req, res) => {
+app.post("/addmembertoorganization", authMiddleware, async (req, res) => {
   const userId = req.userId;
   const organizationId = req.body.organizationId;
   const memberUsername = req.body.memberUserUsername;
 
-  const organization = ORGANIZATION.find(org => org.id == organizationId);
+  const organization = await organizationModel.findById(organizationId)
   // console.log("userid",userId," organizationId",organizationId," memberusername",memberUsername," organization",organization)
 
   if (!organization) {
@@ -144,13 +136,12 @@ app.post("/addmembertoorganization", authMiddleware, (req, res) => {
     });
   }
 
-  if (organization.admin != userId ) {
-    return res.status(403).json({
-      message: "You are not the admin"
-    });
-  }
+    organization.members = organization.members || [];
+  
 
-  const memberUser = USERS.find(u => u.username == memberUsername);
+  const memberUser = await userModel.findOne({
+    username:memberUsername
+  });
 
   if (!memberUser) {
     return res.status(404).json({
@@ -158,8 +149,10 @@ app.post("/addmembertoorganization", authMiddleware, (req, res) => {
     });
   }
 
-  if(!organization.members.includes(memberUser.id) && memberUser.id!=userId){
-  organization.members.push(memberUser.id);
+  if (!organization.members.some(m => m && m.equals(memberUser._id)) &&
+      !organization.admin.equals(memberUser._id)) {
+    organization.members.push(memberUser._id);
+    await organization.save();
   }
   
   res.json({
@@ -172,11 +165,12 @@ res.sendFile("D:/mern/caseStudies/express/Trello/frontend/organization.html")
 })
 
 
-app.get("/organization", authMiddleware, (req, res) => {
+app.get("/organization", authMiddleware,async (req, res) => {
   const userId = req.userId;
   const organizationId = req.query.organizationId;
 
-  const organization = ORGANIZATION.find(org => org.id == organizationId);
+  const organization =await organizationModel.findById(organizationId)
+  .populate("members", "username");;
 
   if (!organization) {
     return res.status(404).json({
@@ -184,44 +178,32 @@ app.get("/organization", authMiddleware, (req, res) => {
     });
   }
 
-  // admin ya member hi dekh sakta
-  if (organization.admin != userId && !organization.members.includes(userId)) {
-    return res.status(403).json({
-      message: "Not authorized"
-    });
-  }
-
-  const members = organization.members.map(memberId => {
-    const user = USERS.find(u => u.id == memberId);
-    return {
-      id: user.id,
-      username: user.username
-    };
-  });
+  
 
   res.json({
     organization: {
-      id: organization.id,
+      id: organization._id,
       title: organization.title,
-      members: members
+      members: organization.members
     }
   });
 });
-app.post("/board",(req,res)=>{
+app.post("/board",async(req,res)=>{
   const organizationId=req.body.organizationId
   const title=req.body.title
-  const organization=ORGANIZATION.find(org=>org.id==organizationId)
+  const organization=await organizationModel.findById(organizationId)
   if(!organization){
     res.status(403).json({
       message:"organization not found"
     })
     return 
   }
-  BOARDS.push({
-    id:BOARD_ID++,
-    title:title,
-    organizationId:organizationId
+
+  const board=await boardModel.create({
+   title:title,
+   organizationId:organizationId 
   })
+ 
   res.json({
     message:"Done"
   })
@@ -233,10 +215,12 @@ app.post("/board",(req,res)=>{
 app.get("/dashboard",(req,res)=>{
   res.sendFile("D:/mern/caseStudies/express/Trello/frontend/dashboard.html")
 })
-app.get("/boards",authMiddleware,(req,res)=>{
+app.get("/boards",authMiddleware,async(req,res)=>{
   const UserId=req.userId;
   const organizationId=req.query.organizationId
-  const BoardFind=BOARDS.filter(board=>board.organizationId==organizationId)
+  const BoardFind=await boardModel.find({
+    organizationId:organizationId
+  })
   if(BoardFind.length==0){
     res.status(403).json({
       message:"board is not there"
@@ -247,9 +231,11 @@ app.get("/boards",authMiddleware,(req,res)=>{
   })
 })
 
-app.get("/optionsOrg",authMiddleware,(req,res)=>{
+app.get("/optionsOrg",authMiddleware,async(req,res)=>{
   const userId=req.userId
-  const organization=ORGANIZATION.filter(org=>org.admin==userId)
+  const organization=await organizationModel.find({
+    admin:userId
+  })
   if(!organization){
     res.status(403).json({
       message:"not found"
@@ -262,31 +248,7 @@ app.get("/optionsOrg",authMiddleware,(req,res)=>{
   })
 })
 
-// delete
-app.delete("/members",authMiddleware,(req,res)=>{
-  const userId=req.userId
-  const organizationId=req.body.organizationId
-  const memerUsername=req.body.memberUserUsername
 
-  const organization =ORGANIZATION.find(org=>org.id==organizationId)
-  if(!organization || organization.admin!=userId){
-     res.status(411).json({
-      message:"either member not exist or you are not the admin"
-    })
-    return  
-  }
-  const memberUser=USERS.find(u=>u.username===memerUsername);
-  if(!memerUsername){
-    res.status(411).json({
-      message:"No user with this username exists in our db"
-    })
-  }
-
-  organization.members=organization.members.filter(user=>user.id!==memberUser.id);
-  res.json({
-    message:"user added to organization"
-  })
-})
 app.listen(3000,()=>{
   console.log("the server is running on http://localhost:3000/");
 })
